@@ -13,11 +13,13 @@ GRAVITATIONAL_CONSTANT = 6.67*10**-11
 
 
 star_x, star_y, star_z = 0, 0, 0
+star_x_list, star_y_list, star_z_list = [star_x], [star_y], [star_z]
 star_mass = 2e30
 star_velocity_x, star_velocity_y, star_velocity_z = 0, 0, 0
 
 planet_1_mass = 5.972e24
 planet_1_x, planet_1_y, planet_1_z = 1, 0, 1
+planet_1_x_list, planet_1_y_list, planet_1_z_list = [planet_1_x], [planet_1_y], [planet_1_z]
 planet_1_velocity_x, planet_1_velocity_y, planet_1_velocity_z = 212100, 0, 212100 #m/s
 
 frame_count = 0
@@ -61,16 +63,28 @@ def calculate_distance_from_center(x, y, z):
         continue
     return mass_list"""
 
-for x in range(10):
+def run_sim():
+    global star_x, star_y, star_z
+    global planet_1_x, planet_1_y, planet_1_z
+    global star_mass, planet_1_mass
+    global star_velocity_x, star_velocity_y, star_velocity_z
+    global planet_1_velocity_x, planet_1_velocity_y, planet_1_velocity_z
+
+
+
     print(f"Star location: {star_x}, {star_y}, {star_z}")
     print(f"Planet location: {planet_1_x}, {planet_1_y}, {planet_1_z}")
     print(f"Star: velocities: {star_velocity_x}, {star_velocity_y}, {star_velocity_z}")
-    print(f"Planet: velocities: {planet_1_velocity_x}, {planet_1_velocity_y}, {planet_1_velocity_z}")
+    print(f"Planet: velocities: {planet_1_velocity_x}, {planet_1_velocity_y}, {planet_1_velocity_z}\n")
 
     star_x, star_y, star_z = au_to_meter(star_x), au_to_meter(star_y), au_to_meter(star_z)
+    planet_1_x, planet_1_y, planet_1_z = au_to_meter(planet_1_x), au_to_meter(planet_1_y), au_to_meter(planet_1_z)
 
     star_distance = calculate_distance_from_center(star_x, star_y, star_z)
     planet_1_distance = calculate_distance_from_center(planet_1_x, planet_1_y, planet_1_z)
+
+    print(f"Star Distance: {meter_to_au(star_distance)}AU, {star_distance} m")
+    print(f"Planet 1 Distance: {meter_to_au(planet_1_distance)}AU, {planet_1_distance} m")
     
 
     grav_force_x = calculate_grav_force(star_mass, planet_1_mass, star_distance, planet_1_distance, star_x, planet_1_x)
@@ -118,35 +132,62 @@ for x in range(10):
     star_x, star_y, star_z = meter_to_au(next_star_position_x), meter_to_au(next_star_position_y), meter_to_au(next_star_position_z)
     planet_1_x, planet_1_y, planet_1_z = meter_to_au(next_planet_position_x), meter_to_au(next_planet_position_x), meter_to_au(next_planet_position_z)
 
-    print(f"New Star location: {star_x}, {star_y}, {star_z}")
+    print(f"\nNew Star location: {star_x}, {star_y}, {star_z}")
     print(f"New Planet location: {planet_1_x}, {planet_1_y}, {planet_1_z}")
     print(f"Star: New velocities: {star_velocity_x}, {star_velocity_y}, {star_velocity_z}")
-    print(f"Planet: New velocities: {planet_1_velocity_x}, {planet_1_velocity_y}, {planet_1_velocity_z}")
+    print(f"Planet: New velocities: {planet_1_velocity_x}, {planet_1_velocity_y}, {planet_1_velocity_z}\n")
+
+    return
 
 
 
-# fig, ax = plt.axes(projection="3d") #type of coordinate system
+fig = plt.figure()
+ax = fig.add_subplot(projection="3d")
+ax.view_init(elev=90, azim=-90)
+ax.set_xlim(-10, 10)
+ax.set_ylim(-10, 10)
+ax.set_zlim(-10, 10)
+
+star_graph,   = ax.plot([], [], [], label="Star")
+planet_graph, = ax.plot([], [], [], label="Planet 1")
 """x_data = np.arange(0, 50, 0.1)
 y_data = np.arange(0, 50, 0.1)
 z_data = x_data * y_data
 ax.plot(x_data, y_data, z_data)"""
 
 
-"""ax.plot(star_x[frame_count], star_y[frame_count], star_z[frame_count])
-ax.plot(planet_1_x[frame_count], planet_1_y[frame_count], planet_1_z[frame_count])
+star_traj,   = ax.plot([], [], [], '-', label="Star")
+planet_traj, = ax.plot([], [], [], '-', label="Planet 1")
+
+star_point,   = ax.plot([], [], [], 'o')
+planet_point, = ax.plot([], [], [], 'o')
+
+ax.legend()
 def update(frame):
-    global graph
+    run_sim()
 
-    star_x.append()
-    star_y.append()
-    star_z.append()
-    planet_1_x.append()
-    planet_1_y.append()
-    planet_1_z.appennd()
-    # need to append the data
+    star_x_list.append(star_x)
+    star_y_list.append(star_y)
+    star_z_list.append(star_z)
 
-    graph.set_xdata() #put the data in the ()
-    graph.set_ydata()
-    graph.set_zdata()
-anim = FuncAnimation(fig, update, frames=None)
-plt.show()"""
+    planet_1_x_list.append(planet_1_x)
+    planet_1_y_list.append(planet_1_y)
+    planet_1_z_list.append(planet_1_z)
+
+    star_traj.set_data(star_x_list, star_y_list)
+    star_traj.set_3d_properties(star_z_list)
+
+    planet_traj.set_data(planet_1_x_list, planet_1_y_list)
+    planet_traj.set_3d_properties(planet_1_z_list)
+
+    star_point.set_data([star_x_list[-1]], [star_y_list[-1]])
+    star_point.set_3d_properties([star_z_list[-1]])
+
+    planet_point.set_data([planet_1_x_list[-1]], [planet_1_y_list[-1]])
+    planet_point.set_3d_properties([planet_1_z_list[-1]])
+
+    return star_traj, planet_traj, star_point, planet_point
+
+
+anim = FuncAnimation(fig, update, frames=10, interval=500)
+plt.show()
