@@ -1,0 +1,4 @@
+Name,Mass (kg),X (AU),Y (AU),Z (AU),Vx (m/s),Vy (m/s),Vz (m/s),Color
+Sun,2.00E+30,0,0,0,0,0,0,Yellow
+Earth,5.97E+24,0.707,0,0.707,21210,0,21210,Blue
+Mars,6.39E+23,1.067,0,1.067,16970,0,16970,Red
