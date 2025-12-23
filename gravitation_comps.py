@@ -16,6 +16,8 @@ all_objects = []
 initial_energy = 0
 showing_energy = 0
 current_energy = []
+all_l =[]
+
 
 objects = 0
 with open('objects.csv', mode='r') as file:
@@ -32,7 +34,7 @@ with open('objects.csv', mode='r') as file:
 
 
 frame_count = 0
-time_interval = 60*60
+time_interval = 60*60*24*30
 
 # fix to accept one argument for r not 2
 def calculate_grav_force(m1, m2, r, component_1, component_2):
@@ -80,15 +82,18 @@ def calculate_potential_energy(m1, m2, r):
 def calculate_mechanical_energy(u, k):
     return k + u
 
-"""def calculate_center_of_mass(mass_list, radius_list):
+def calculate_center_of_mass(mass_list, radius_list):
     #Assumes mass and radius are in ordered list
     if len(mass_list) != len(radius_list):
         raise ValueError("Lists are not the same length")
     sum_mass = 0
     sum_r_m = 0
-    for i in len(mass_list):
-        continue
-    return mass_list"""
+    for i in range(len(mass_list)):
+        sum_r_m += mass_list[i] * radius_list[i]
+        sum_mass += mass_list[i]
+    return sum_r_m / sum_mass
+
+
 
 
 # Before running sim need to do the calculate center of mass of the whole area and shift everything
@@ -113,6 +118,11 @@ def run_sim():
     all_next_distances_each_direction = defaultdict(float)
     new_positions = {}
     new_velocities = {}
+    mass_list = []
+    radius_list_x = []
+    radius_list_y = []
+    radius_list_z = []
+    l = 0
 
     all_next_accelerations = defaultdict(float)
     next_grav_forces = {}
@@ -124,7 +134,7 @@ def run_sim():
         object_vz = all_objects[i]["velocity_z"]
         k += calculate_kinetic_energy(object_mass, object_vx, object_vy, object_vz)
 
-    for i in range(len(all_objects)):
+    """for i in range(len(all_objects)):
         object_name = all_objects[i]['name']
         
         object_x_m = au_to_meter(all_objects[i]['x'])
@@ -133,6 +143,37 @@ def run_sim():
 
         object_distance = calculate_distance_from_center(object_x_m, object_y_m, object_z_m)
         distances_from_center[object_name] = object_distance # Should make the object name key
+"""
+    
+    for i in range(len(all_objects)):
+        mass_list.append(all_objects[i]['mass'])
+        radius_list_x.append(all_objects[i]['x'])
+        radius_list_y.append(all_objects[i]['y'])
+        radius_list_z.append(all_objects[i]['z'])
+
+    cm_x = calculate_center_of_mass(mass_list, radius_list_x)
+    cm_y = calculate_center_of_mass(mass_list, radius_list_y)
+    cm_z = calculate_center_of_mass(mass_list, radius_list_z)
+
+    l = np.zeros(3)
+    for i in range(len(all_objects)):
+        object_x = all_objects[i]['x']
+        object_y = all_objects[i]['y']
+        object_z = all_objects[i]['z']
+        object_vx = all_objects[i]["velocity_x"]
+        object_vy = all_objects[i]["velocity_y"]
+        object_vz = all_objects[i]["velocity_z"]
+        object_mass = all_objects[i]['mass']
+        rx = object_x - cm_x
+        ry = object_y - cm_y
+        rz = object_z - cm_z
+
+        r = [rx, ry, rz]
+        v = [object_vx, object_vy, object_vz]
+        l += object_mass * np.cross(r, v)
+    all_l.append(np.linalg.norm(l))  # append scalar
+
+
 
 
     for i in range(len(all_objects)):
@@ -152,7 +193,7 @@ def run_sim():
         object_y_m = au_to_meter(object_y)
         object_z_m = au_to_meter(object_z)
 
-        object_distance = distances_from_center[object_name]
+        # object_distance = distances_from_center[object_name]
         
         for j in range(len(all_objects)):
             if j > i:
@@ -346,12 +387,12 @@ def run_sim():
     return
 
 
-fig = plt.figure(figsize = (10, 5))
+fig = plt.figure(figsize = (10, 10))
 
 
-# The arguments 122 mean 1 row, 2 columns, 2nd plot
+# The arguments 121 mean 1 row, 2 columns, 2nd plot
 # Crucially, specify the 'projection' argument
-ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+ax1 = fig.add_subplot(2, 2, 1, projection='3d')
 
 
 
@@ -359,9 +400,10 @@ ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 
 
 ax1.view_init(elev=0, azim=-90)
-ax1.set_xlim(-1, 1)
-ax1.set_ylim(-3, 3)
-ax1.set_zlim(-1, 1)
+lims = 3
+ax1.set_xlim(-lims, lims)
+ax1.set_ylim(-lims, lims)
+ax1.set_zlim(-lims, lims)
 
 ax1.set_xlabel('X (AU)')
 ax1.set_ylabel('Y (AU)')
@@ -384,15 +426,26 @@ for obj in all_objects:
 
 ax1.legend()
 
-ax2 = fig.add_subplot(1, 2, 2)
+ax2 = fig.add_subplot(2, 2, 2)
 x_data_energy = []
 y_data_energy = []
 line, = ax2.plot(x_data_energy, y_data_energy)
 
 ax2.set_title('Energy vs Frames')
-ax2.set_xlabel('Frame count aka days')
+ax2.set_xlabel('Frame count')
 ax2.set_ylabel('Mechanical Energy (J)')
 ax2.grid(True)
+
+
+ax3 = fig.add_subplot(2, 2, 3)
+x_data_l = []
+y_data_l = []
+line1, = ax3.plot(x_data_l, y_data_l)
+
+ax3.set_title("Angular Momentum vs Frames")
+ax3.set_xlabel('Frame count aka days')
+ax3.set_ylabel('Mechanical Energy (J)')
+ax3.grid(True)
 
 
 def update(frame):
@@ -427,9 +480,19 @@ def update(frame):
     if new_x >= ax2.get_xlim()[1]:
         ax2.set_xlim(new_x - 50, new_x + 50) # Shift the window
         ax2.figure.canvas.draw() # Force redraw of axes
+
+    new_y_l = all_l[-1]
+    x_data_l.append(new_x)
+    y_data_l.append(new_y_l)
+    line1.set_data(x_data_l, y_data_l)
+    ax3.relim()
+    ax3.autoscale_view()
+    if new_x >= ax3.get_xlim()[1]:
+        ax3.set_xlim(new_x - 50, new_x + 50) # Shift the window
+        ax3.figure.canvas.draw() # Force redraw of axes
     
 
-    return (*traj_lines, *points, line,)
+    return (*traj_lines, *points, line, line1,)
 
 anim = FuncAnimation(fig, update, frames=30000, interval=0, repeat=False)
 plt.tight_layout()
