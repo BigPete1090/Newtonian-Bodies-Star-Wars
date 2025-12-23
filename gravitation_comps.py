@@ -32,7 +32,7 @@ with open('objects.csv', mode='r') as file:
 
 
 frame_count = 0
-time_interval = 60*60*24
+time_interval = 60*60
 
 # fix to accept one argument for r not 2
 def calculate_grav_force(m1, m2, r, component_1, component_2):
@@ -359,9 +359,9 @@ ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 
 
 ax1.view_init(elev=0, azim=-90)
-ax1.set_xlim(-3, 3)
+ax1.set_xlim(-1, 1)
 ax1.set_ylim(-3, 3)
-ax1.set_zlim(-3, 3)
+ax1.set_zlim(-1, 1)
 
 ax1.set_xlabel('X (AU)')
 ax1.set_ylabel('Y (AU)')
