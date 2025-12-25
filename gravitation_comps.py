@@ -34,7 +34,7 @@ with open('objects.csv', mode='r') as file:
 
 
 frame_count = 0
-time_interval = 60*60*24*30
+time_interval = 60*60
 
 # fix to accept one argument for r not 2
 def calculate_grav_force(m1, m2, r, component_1, component_2):
@@ -448,6 +448,34 @@ ax3.set_ylabel('Mechanical Energy (J)')
 ax3.grid(True)
 
 
+# --- Color map ---
+color_map = {obj["name"]: obj["color"] for obj in all_objects}
+ax4 = fig.add_subplot(2, 2, 4, projection='3d')
+
+moon_x_list = []
+moon_y_list = []
+moon_z_list = []
+
+EM_LIM = 0.01  # AU
+
+ax4.set_xlim(-EM_LIM, EM_LIM)
+ax4.set_ylim(-EM_LIM, EM_LIM)
+ax4.set_zlim(-EM_LIM, EM_LIM)
+ax4.set_box_aspect([1,1,1])
+ax4.set_title("Earth–Moon 3D Frame")
+ax4.set_xlabel("X (AU)")
+ax4.set_ylabel("Y (AU)")
+ax4.set_zlabel("Z (AU)")
+
+moon_traj, = ax4.plot([], [], [], '-', color=color_map["Moon"], label="Moon")
+moon_point, = ax4.plot([], [], [], 'o', color=color_map["Moon"])
+earth_point, = ax4.plot([0], [0], [0], 'o', color=color_map["Earth"], label="Earth")
+ax4.legend()
+
+
+
+
+
 def update(frame):
     global frame_count
     print(f"Frame Count")
@@ -490,9 +518,57 @@ def update(frame):
     if new_x >= ax3.get_xlim()[1]:
         ax3.set_xlim(new_x - 50, new_x + 50) # Shift the window
         ax3.figure.canvas.draw() # Force redraw of axes
-    
 
-    return (*traj_lines, *points, line, line1,)
+
+    
+    earth = next(obj for obj in all_objects if obj["name"] == "Earth")
+    moon  = next(obj for obj in all_objects if obj["name"] == "Moon")
+
+    ex, ey, ez = earth["x"], earth["y"], earth["z"]
+    mx, my, mz = moon["x"], moon["y"], moon["z"]
+
+    # Moon relative to Earth
+    rel_mx = mx - ex
+    rel_my = my - ey
+    rel_mz = mz - ez
+
+    moon_x_list.append(rel_mx)
+    moon_y_list.append(rel_my)
+    moon_z_list.append(rel_mz)
+
+    moon_traj.set_data(moon_x_list, moon_y_list)
+    moon_traj.set_3d_properties(moon_z_list)
+
+    moon_point.set_data([rel_mx], [rel_my])
+    moon_point.set_3d_properties([rel_mz])
+
+    earth_point.set_data([0], [0])
+    earth_point.set_3d_properties([0])
+
+    # Keep axes centered on 0 but change tick labels for real AU relative to the main one
+    ax4.set_xlim(-EM_LIM, EM_LIM)
+    ax4.set_ylim(-EM_LIM, EM_LIM)
+    ax4.set_zlim(-EM_LIM, EM_LIM)
+
+    xticks = np.linspace(-EM_LIM, EM_LIM, 5) + ex
+    yticks = np.linspace(-EM_LIM, EM_LIM, 5) + ey
+    zticks = np.linspace(-EM_LIM, EM_LIM, 5) + ez
+
+    ax4.set_xticks(np.linspace(-EM_LIM, EM_LIM, 5))
+    ax4.set_xticklabels([f"{val:.3f}" for val in xticks])
+    ax4.set_yticks(np.linspace(-EM_LIM, EM_LIM, 5))
+    ax4.set_yticklabels([f"{val:.3f}" for val in yticks])
+    ax4.set_zticks(np.linspace(-EM_LIM, EM_LIM, 5))
+    ax4.set_zticklabels([f"{val:.3f}" for val in zticks])
+
+
+
+
+
+
+
+    return (*traj_lines, *points, line, line1,moon_traj, moon_point, earth_point)
+
 
 anim = FuncAnimation(fig, update, frames=30000, interval=0, repeat=False)
 plt.tight_layout()
