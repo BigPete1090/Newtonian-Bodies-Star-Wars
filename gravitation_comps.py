@@ -9,6 +9,11 @@ import random
 from matplotlib.animation import FuncAnimation
 import csv
 from collections import defaultdict
+from astroquery.jplhorizons import Horizons
+import pandas as pd
+from astropy.time import Time
+from datetime import datetime, timezone
+
 
 
 GRAVITATIONAL_CONSTANT = 6.67e-11
@@ -17,24 +22,90 @@ initial_energy = 0
 showing_energy = 0
 current_energy = []
 all_l =[]
+time_interval = 60*60*24
+lims = 75 # AU visible in graph
 
 
 objects = 0
+
+now_utc = datetime.now(timezone.utc)
+epoch_jd = Time(now_utc).jd
+print(f"Using NASA Horizons epoch (JD): {epoch_jd}")
+
+HORIZONS_IDS = {
+    "Sun": "10",
+    "Mercury": "199",
+    "Venus": "299",
+    "Earth": "399",
+    "Moon": "301",
+    "Mars": "499",
+    "Jupiter": "599",
+    "Saturn": "699",
+    "Uranus": "799",
+    "Neptune": "899",
+    "Pluto": "999"
+}
+
 with open('objects.csv', mode='r') as file:
     csv_reader = csv.DictReader(file, delimiter=',')
+
     for row in csv_reader:
         name_obj = row['Name']
-        dict_fun = {"name": row['Name'], 'mass': float(row['Mass (kg)']),
-                                'x': float(row['X (AU)']), 'y': float(row['Y (AU)']), 'z': float(row['Z (AU)']), 
-                                'velocity_x': float(row['Vx (m/s)']), 'velocity_y': float(row['Vy (m/s)']),  'velocity_z': float(row['Vz (m/s)']), 
-                                'color': row['Color']}
-        print(f"{dict_fun}")
+        #Orginal csv first
+        '''x = float(row['X (AU)'])
+        y = float(row['Y (AU)'])
+        z = float(row['Z (AU)'])
+        vx = float(row['Vx (m/s)'])
+        vy = float(row['Vy (m/s)'])
+        vz = float(row['Vz (m/s)'])'''
+
+        if name_obj in HORIZONS_IDS:
+            obj = Horizons(id=HORIZONS_IDS[name_obj], location='@sun', epochs=epoch_jd)
+            vec = obj.vectors()
+
+            # Positions are in AU
+            x = float(vec['x'])
+            y = float(vec['y'])
+            z = float(vec['z'])
+            # Velocities are in AU/day, need to convert to m/s
+            AU_TO_M = 1.495978707e11  
+            DAY_TO_S = 86400         
+            
+            vx = float(vec['vx']) * AU_TO_M / DAY_TO_S
+            vy = float(vec['vy']) * AU_TO_M / DAY_TO_S
+            vz = float(vec['vz']) * AU_TO_M / DAY_TO_S
+            
+            print(f"\n{name_obj} from Horizons:")
+            print(f"  Position (AU): x={x:.6f}, y={y:.6f}, z={z:.6f}")
+            print(f"  Velocity (m/s): vx={vx:.1f}, vy={vy:.1f}, vz={vz:.1f}")
+        else:
+            # csv backup
+            x = float(row['X (AU)'])
+            y = float(row['Y (AU)'])
+            z = float(row['Z (AU)'])
+            vx = float(row['Vx (m/s)'])
+            vy = float(row['Vy (m/s)'])
+            vz = float(row['Vz (m/s)'])
+
+        dict_fun = {
+            "name": name_obj,
+            "mass": float(row['Mass (kg)']),
+            "x": x,
+            "y": y,
+            "z": z,
+            "velocity_x": vx,
+            "velocity_y": vy,
+            "velocity_z": vz,
+            "color": row['Color']
+        }
+
+        print(dict_fun)
         all_objects.append(dict_fun)
 
 
 
 frame_count = 0
-time_interval = 60*60
+
 
 # fix to accept one argument for r not 2
 def calculate_grav_force(m1, m2, r, component_1, component_2):
@@ -125,6 +196,8 @@ def run_sim():
     l = 0
 
     all_next_accelerations = defaultdict(float)
+    for obj in all_objects:
+        print(f"{obj['name']} initial ax,ay,az: {all_current_accelerations[obj['name'],'x']}, {all_current_accelerations[obj['name'],'y']}, {all_current_accelerations[obj['name'],'z']}")
     next_grav_forces = {}
     # Calculate Kinetic Energy
     for i in range(len(all_objects)):
@@ -198,7 +271,6 @@ def run_sim():
         for j in range(len(all_objects)):
             if j > i:
                 second_object_name = all_objects[j]['name']
-                print(f"Calculating the gravity between object {object_name} and {second_object_name}")
                 second_object_mass = all_objects[j]['mass']
                 second_object_x = all_objects[j]['x']
                 second_object_y = all_objects[j]['y']
@@ -309,7 +381,6 @@ def run_sim():
                 object_distances = calculate_distance_between_objects(next_object_x, next_object_y, next_object_z, 
                                                                       next_second_object_x, next_second_object_y, next_second_object_z)
                 
-                print(f"Calculating the next gravity between object {object_name} and {second_object_name}")
                 if (next_grav_forces.get((object_name, second_object_name, "x"), None) is None or
                     next_grav_forces.get((object_name, second_object_name, "y")) is None or 
                     next_grav_forces.get((object_name, second_object_name, "z")) is None): 
@@ -387,7 +458,7 @@ def run_sim():
     return
 
 
-fig = plt.figure(figsize = (10, 10))
+fig = plt.figure(figsize = (6, 6))
 
 
 # The arguments 121 mean 1 row, 2 columns, 2nd plot
@@ -399,8 +470,7 @@ ax1 = fig.add_subplot(2, 2, 1, projection='3d')
 
 
 
-ax1.view_init(elev=0, azim=-90)
-lims = 3
+
 ax1.set_xlim(-lims, lims)
 ax1.set_ylim(-lims, lims)
 ax1.set_zlim(-lims, lims)
@@ -408,6 +478,7 @@ ax1.set_zlim(-lims, lims)
 ax1.set_xlabel('X (AU)')
 ax1.set_ylabel('Y (AU)')
 ax1.set_zlabel('Z (AU)')
+
 
 traj_lines = []
 points = []
@@ -424,15 +495,15 @@ for obj in all_objects:
     points.append(point)
 
 
-ax1.legend()
-
+ax1.legend(loc='upper left', bbox_to_anchor=(1.2, 1), 
+           borderaxespad=0, fontsize='small')
 ax2 = fig.add_subplot(2, 2, 2)
 x_data_energy = []
 y_data_energy = []
 line, = ax2.plot(x_data_energy, y_data_energy)
 
-ax2.set_title('Energy vs Frames')
-ax2.set_xlabel('Frame count')
+ax2.set_title('Energy vs Time')
+ax2.set_xlabel('Time (days)')  
 ax2.set_ylabel('Mechanical Energy (J)')
 ax2.grid(True)
 
@@ -442,9 +513,9 @@ x_data_l = []
 y_data_l = []
 line1, = ax3.plot(x_data_l, y_data_l)
 
-ax3.set_title("Angular Momentum vs Frames")
-ax3.set_xlabel('Frame count aka days')
-ax3.set_ylabel('Mechanical Energy (J)')
+ax3.set_title("Angular Momentum vs Time")
+ax3.set_xlabel('Time (days)')  
+ax3.set_ylabel('Angular Momentum (kgm^2/s)')  
 ax3.grid(True)
 
 
@@ -467,6 +538,8 @@ ax4.set_xlabel("X (AU)")
 ax4.set_ylabel("Y (AU)")
 ax4.set_zlabel("Z (AU)")
 
+
+
 moon_traj, = ax4.plot([], [], [], '-', color=color_map["Moon"], label="Moon")
 moon_point, = ax4.plot([], [], [], 'o', color=color_map["Moon"])
 earth_point, = ax4.plot([0], [0], [0], 'o', color=color_map["Earth"], label="Earth")
@@ -482,6 +555,7 @@ def update(frame):
     run_sim()
     print(f"Simulation Complete for frame: {frame_count}\n\n\n")
     frame_count += 1
+    time_in_days = frame * 0.25
     for i, obj in enumerate(all_objects):
         x = obj["x"]
         y = obj["y"]
@@ -499,25 +573,26 @@ def update(frame):
 
     new_x = frame
     new_y = current_energy[-1]
-    x_data_energy.append(new_x)
+    x_data_energy.append(time_in_days)
     y_data_energy.append(new_y)
     line.set_data(x_data_energy, y_data_energy)
     ax2.relim()
     ax2.autoscale_view()
 
-    if new_x >= ax2.get_xlim()[1]:
-        ax2.set_xlim(new_x - 50, new_x + 50) # Shift the window
-        ax2.figure.canvas.draw() # Force redraw of axes
+    if time_in_days >= ax2.get_xlim()[1]:
+        ax2.set_xlim(time_in_days - 12.5, time_in_days + 12.5)  # Adjusted window
+        ax2.figure.canvas.draw()
+
 
     new_y_l = all_l[-1]
-    x_data_l.append(new_x)
+    x_data_l.append(time_in_days)
     y_data_l.append(new_y_l)
     line1.set_data(x_data_l, y_data_l)
     ax3.relim()
     ax3.autoscale_view()
-    if new_x >= ax3.get_xlim()[1]:
-        ax3.set_xlim(new_x - 50, new_x + 50) # Shift the window
-        ax3.figure.canvas.draw() # Force redraw of axes
+    if time_in_days >= ax3.get_xlim()[1]:
+        ax3.set_xlim(time_in_days - 12.5, time_in_days + 12.5)  
+        ax3.figure.canvas.draw()
 
 
     
@@ -567,9 +642,9 @@ def update(frame):
 
 
 
-    return (*traj_lines, *points, line, line1,moon_traj, moon_point, earth_point)
+    return (*traj_lines, *points, line, line1, moon_traj, moon_point, earth_point)
 
 
-anim = FuncAnimation(fig, update, frames=30000, interval=0, repeat=False)
+anim = FuncAnimation(fig, update, frames=10000000, interval=0, repeat=False)
 plt.tight_layout()
 plt.show()
