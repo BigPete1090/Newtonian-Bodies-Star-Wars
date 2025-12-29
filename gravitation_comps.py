@@ -22,8 +22,8 @@ initial_energy = 0
 showing_energy = 0
 current_energy = []
 all_l =[]
-time_interval = 60*60*24
-lims = 75 # AU visible in graph
+time_interval = 60*60*24*3
+lims = 50 # AU visible in graph
 
 
 objects = 0
@@ -555,7 +555,7 @@ def update(frame):
     run_sim()
     print(f"Simulation Complete for frame: {frame_count}\n\n\n")
     frame_count += 1
-    time_in_days = frame * 0.25
+    time_in_days = frame * 3
     for i, obj in enumerate(all_objects):
         x = obj["x"]
         y = obj["y"]
@@ -645,6 +645,6 @@ def update(frame):
     return (*traj_lines, *points, line, line1, moon_traj, moon_point, earth_point)
 
 
-anim = FuncAnimation(fig, update, frames=10000000, interval=0, repeat=False)
+anim = FuncAnimation(fig, update, frames=30000, interval=0, repeat=False)
 plt.tight_layout()
 plt.show()
