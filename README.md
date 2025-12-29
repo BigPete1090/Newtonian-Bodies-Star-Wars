@@ -34,15 +34,13 @@ These diagnostics are used to verify physical correctness and integration qualit
 
 ## Coordinate System
 
-* **Frame:** Heliocentric
-* **Axes:** Right-handed Cartesian (X, Y, Z)
-* **Units:**
 
-  * Position: Astronomical Units (AU)
-  * Velocity: meters per second (m/s)
-  * Mass: kilograms (kg)
 
-A secondary visualization shows the **Earth–Moon system in a co-moving frame** to show the accuracy
+* Position: Astronomical Units (AU)
+* Velocity: meters per second (m/s)
+* Mass: kilograms (kg)
+
+A second visualization shows the Earth and Moon to show the accuracy of the simulation
 
 ## Initial Conditions
 
