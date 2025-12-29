@@ -19,9 +19,9 @@ Initial conditions are sourced from **NASA JPL Horizons**.
 
 Each body evolves according to Newton’s law of gravitation:
 
-[
+$$
 \mathbf{F}_{ij} = G \frac{m_i m_j}{|\mathbf{r}_j - \mathbf{r}_i|^3} (\mathbf{r}_j - \mathbf{r}_i)
-]
+$$
 
 Accelerations are computed by summing the gravitational contributions from all other bodies. Positions and velocities are updated using a fixed timestep integrator designed to preserve long-term orbital stability.
 
