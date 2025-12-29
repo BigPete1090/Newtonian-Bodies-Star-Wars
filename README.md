@@ -4,8 +4,6 @@ A Newtonian N-body simulation of the Solar System written in Python. This projec
 
 Initial conditions are sourced from **NASA JPL Horizons**.
 
----
-
 ## Key Features
 
 * Full **N-body Newtonian gravity** 
@@ -16,8 +14,6 @@ Initial conditions are sourced from **NASA JPL Horizons**.
 * Dedicated **Earth–Moon reference graph** that is a zoomed in version tracking the Earth at the center of this graph
 * Modular object-based design for easy extension
 * Built for numerical experimentation and physics validation if desired
-
----
 
 ## Physics Model
 
@@ -36,8 +32,6 @@ The simulation explicitly tracks:
 
 These diagnostics are used to verify physical correctness and integration quality.
 
----
-
 ## Coordinate System
 
 * **Frame:** Heliocentric
@@ -50,8 +44,6 @@ These diagnostics are used to verify physical correctness and integration qualit
 
 A secondary visualization shows the **Earth–Moon system in a co-moving frame** to show the accuracy
 
----
-
 ## Initial Conditions
 
 Initial positions and velocities are obtained from **NASA JPL Horizons**. This provides:
@@ -61,7 +53,7 @@ Initial positions and velocities are obtained from **NASA JPL Horizons**. This p
 * Consistent angular momentum and energy
 
 Backup conditions are used just in case something can't be found from JPL Horizons
----
+
 
 ## Visualization Layout
 
@@ -74,7 +66,10 @@ The simulation window contains four panels:
 
 Legends are rendered outside the axes to preserve plotting area while maintaining clarity.
 
----
+## Example
+This was taken from a set of about 30000 frames or about 90,000 days on a 3 day time interval. Note how angular momentum is conserved completely and energu olscilates, though there is no loss because the mean value stays constant so the time-averaged energy is constant 
+
+![Full Graphs](nbody.png)
 
 ## Numerical Notes
 
@@ -83,6 +78,6 @@ Legends are rendered outside the axes to preserve plotting area while maintainin
 * Long-term simulations may require smaller timesteps or higher-order symplectic methods.
 * Do not use timesteps > 3 days as it may cause objects to fly away from wahtever is being orbited
 
----
+
 
 
